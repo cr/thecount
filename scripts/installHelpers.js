@@ -104,39 +104,27 @@ function wireUpInstallButtons(installedManifestURLs) {
 	});
 }
 
+// Stuff to do when the page loads
+
 $(document).ready(function() {
-	var installedManifestURLs = [];
-
-	if (window.navigator.mozApps && window.navigator.mozApps.getInstalled) {
-		var installListRequest = window.navigator.mozApps.getInstalled();
-		installListRequest.onerror = function(e) {
-			alert("Error calling getInstalled: " + installListRequest.error.name);
-
-			wireUpInstallButtons([]);
-		};
-
-		installListRequest.onsuccess = function(e) {
-			for (var installListIndex = 0; installListIndex < installListRequest.result.length; installListIndex++) {
-				var manifestURL = installListRequest.result[installListIndex].manifestURL;
-				installedManifestURLs.push(manifestURL);
-				appRecordsByManifest[manifestURL] = installListRequest.result[installListIndex];
-			}
-
-			wireUpInstallButtons(installedManifestURLs);
-		};
-	} else {
-		$('.installButton').attr("disabled", "disabled");
-	}
-
-	// set up search button behavior
-
-	$('.searchButton').click(function(e) {
-		e.preventDefault();
-		console.log('searching ' + $('#searchText').val());
-		location.href='/listing/search/' + $('#searchText').val();
-	});
 
 	// set up table sorting behavior
 
-	$('.tablesorter-table').tablesorter();
+	// $('.tablesorter-table').tablesorter({
+	//     theme : 'blue',
+	 
+	//     headers: { 0: { sorter: false }, 1: { sorter: true }, 4: { sorter: false } },
+	 
+	//     // header layout template; {icon} needed for some themes
+	//     headerTemplate : '{content}{icon}',
+	 
+	//     // initialize column styling of the table
+	//     widgets : ["columns"],
+	//     widgetOptions : {
+	// 		// change the default column class names
+	// 		// primary is the first column sorted, secondary is the second, etc
+	// 		columns : [ "primary", "secondary", "tertiary" ]
+	//     }
+	// });
+
 });

@@ -9,12 +9,14 @@ var url = require('url');
 var parseAppcacheManifest = require("parse-appcache-manifest");
 var admZip = require('adm-zip');
 var util = require('util');
+var cheerio = require('cheerio');
 
 // global scope
 
 var theScope = {};
 theScope.apps = {};
 theScope.pendingRequests = 0;
+theScope.isRunning = false;
 theScope.timeout = 240000;
 
 // creates a Q promise that 
@@ -158,6 +160,24 @@ function getAppcacheManifest(inApp) {
 // returns a Q promise for retrieving an app's appcache manifest
 // catches errors and returns them as JSON
 
+function getLaunchPage(inApp) {
+    var manifestURL = url.parse(inApp.manifest_url);
+    var launchPathURL = manifestURL; 
+
+    if (inApp.manifest.launch_path) {
+        launchPathURL = url.resolve(manifestURL, inApp.manifest.launch_path);
+    }
+
+    return getPromiseForRequest(launchPathURL).catch(function (error) {
+        console.log('getLaunchPage ' + launchPathURL + ' CATCH ' + error);
+        // TODO: this doesn't seem to work
+        return {'error' : error.toString() };
+    });
+}
+
+// returns a Q promise for retrieving an app's appcache manifest
+// catches errors and returns them as JSON
+
 function getAppPackageAndExtractManifest(inApp) {
     var filename = '/tmp/' + inApp.id + '.zip';
     var manifestURL = url.parse(inApp.manifest_url);
@@ -202,6 +222,7 @@ function addPromiseForManifest(subpromises, app) {
         // add a subpromise for the app manifest
         subpromises.push(getManifest(app).then(function (data) {
             theScope.apps[app.id].manifest = data;
+            theScope.apps[app.id].included_scripts = [];
 
             // for apps with a package, add a promise to retrieve the package and the manifest inside it
             if (data.package_path) {
@@ -221,6 +242,32 @@ function addPromiseForManifest(subpromises, app) {
                     zipEntries.forEach(function(zipEntry) {
                         var filename = zipEntry.entryName.substring(zipEntry.entryName.lastIndexOf('/') + 1);
                         theScope.apps[app.id].package_entries.push(filename);
+                    });
+                }));
+            } else {
+                subpromises.push(getLaunchPage(theScope.apps[app.id]).catch(function () {
+                    console.log('catch getLaunchPage inside addPromiseForManifest');
+                }).then(function (launchPageData) {
+                    theScope.apps[app.id].included_scripts = [];
+                    $ = cheerio.load(launchPageData);
+
+                    // TODO: don't just look in launch page for hosted apps
+                    // also do it for packaged apps
+                    $('html').find('meta').each(function (index, metaTag) {
+                        if (metaTag.attribs.name && metaTag.attribs.name == 'viewport') {
+                            console.log("VIEWPORT");
+                            console.log(metaTag.attribs.content);
+                            theScope.apps[app.id].meta_viewport = metaTag.attribs.content;
+                        } else {
+                            // say nothin'
+                        }
+                    })
+
+                    $('html').find('script').each(function (index, scriptTag) {
+                        if (scriptTag.attribs.src) {
+                            theScope.apps[app.id].included_scripts.push(scriptTag.attribs.src);
+                            // console.log(app.id + ' ' + scriptTag.attribs.src);
+                        }
                     });
                 }));
             }
@@ -267,6 +314,7 @@ function searchAppData(inSearchURL) {
 
         if (data.meta.next) {
             console.log(data.meta.offset + '/' + data.meta.total_count + ' pending ' + theScope.pendingRequests + ' size ' + Object.keys(theScope.apps).length);
+            theScope.totalCount = data.meta.total_count;
             subpromises.push(searchAppData('https://marketplace.firefox.com' + data.meta.next));
         }
 
@@ -277,7 +325,7 @@ function searchAppData(inSearchURL) {
 // returns a Q promise to retrieve the entire firefox marketplace catalog
 
 function findAppData() {
-    return searchAppData('https://marketplace.firefox.com/api/v1/apps/search/?format=JSON&limit=200');
+    return searchAppData('https://marketplace.firefox.com/api/v1/apps/search/?format=JSON&region=None&limit=200');
 }
 
 // QUERIES --------------------------------------------
@@ -310,18 +358,6 @@ function getFilenames(inApp) {
 function firstAppName(app) {
     var appNameKeys = Object.keys(app.name);
     return app.name[appNameKeys[0]].replace(/,/g, '');
-}
-
-function whoUsesFile(inFilename) {
-    console.log('who uses "' + inFilename + "'");
-    for (index in theScope.apps) {
-        var app = theScope.apps[index];
-
-        var filenames = getFilenames(app);
-        if (filenames.indexOf(inFilename) >= 0) {
-            console.log(firstAppName(app) + ' by ' + app.author);
-        }
-    }
 }
 
 function whoUsesPermission(inPermission) {
@@ -371,27 +407,19 @@ function verifyLocales() {
     }    
 }
 
-// Creating and Loading the local database
-
-function loadDB(inJSONFilename) {
-    var raw = fs.readFileSync(inJSONFilename);
-
-    try {
-        theScope.apps = JSON.parse(raw); 
-        console.log('loaded ' + Object.keys(theScope.apps).length + ' objects');
-    }
-    catch (e) {
-        console.log('cannot parse ' + inJSONFilename + ', ' + e);
-        theScope.apps = [];
-    }
-}
+// retrieve all the data in the Firefox Marketplace catalog using the Marketplace API
 
 function createMarketplaceCatalogDB(inOutputFile) {
+    theScope.isRunning = true;
+    theScope.startTime = Date.now();
+
     return findAppData().then(function() {
         console.log('DONE ALL ' + Object.keys(theScope.apps).length + ', still pending ' + theScope.pendingRequests); 
     }).catch(function (error) {
         console.log('createMarketplaceCatalogDB err ' + error);
+        console.log(error.stack);
     }).finally(function() {
+        theScope.isRunning = false;
         fs.writeFile(inOutputFile, JSON.stringify(theScope.apps, null, 4), function(err) {
             if (err) {
               console.log('error writing JSON: ' + err);
@@ -402,7 +430,44 @@ function createMarketplaceCatalogDB(inOutputFile) {
     });
 }
 
+// returns a JSON blob describing the progress of the catalog scraper.
+
+function progressReport() {
+    var manifestCount = 0;
+    var errorApps = [];
+
+    for (index in theScope.apps) {
+        var app = theScope.apps[index];
+
+        if (app.manifest) {
+            manifestCount = manifestCount + 1;
+        }
+
+        if ((app.manifest && app.manifest.error) || (app.appcache_manifest && app.appcache_manifest.error)) {
+            errorApps.push(app);
+        }
+    }
+
+    return {
+        apps: Object.keys(theScope.apps).length, 
+        pendingRequests: theScope.pendingRequests,
+        manifestCount: manifestCount,
+        totalCount: theScope.totalCount,
+        elapsedSeconds: (Date.now() - theScope.startTime) / 1000,
+        appPercentage: 100 * (Object.keys(theScope.apps).length / theScope.totalCount),
+        manifestPercentage: 100 * manifestCount / theScope.totalCount,
+        errorApps: errorApps,
+        isRunning: theScope.isRunning };
+}
+
+// returns true if the catalog scraper is running, false otherwise.
+
+function isRunning() {
+    return theScope.isRunning;
+}
+
+
 module.exports.createMarketplaceCatalogDB = createMarketplaceCatalogDB;
-module.exports.loadDB = loadDB;
-module.exports.whoUsesFile = whoUsesFile;
-module.exports.verifyLocales = verifyLocales;
+module.exports.progressReport = progressReport;
+module.exports.isRunning = isRunning;
+// module.exports.verifyLocales = verifyLocales;

@@ -6,47 +6,50 @@ function get(prop) {
   };
 }
 
-function createDistributionGraph(inDivClass, chartData) {
-	console.log('start createDistributionGraph');
-	console.log(chartData);
+function createFrequencyGraph(inDivClass, inListingKind, data) {
+    console.log('frequency kind ' + inListingKind);
 
-    x = d3.scale.linear()
-        .domain([0, d3.max(chartData, get('val'))])
-        .range([0, 80]);
+    var width = 900,
+        outsideLabelThreshold = 200,
+        barHeight = 25, 
+        formatCount = d3.format(",.0f");
 
-    d3.select('.' + inDivClass)
-        .selectAll("div")
-            .data(chartData)
-        .enter().append("div")
-            .attr('class', get('label'))
-            .style("width", function(d) { 
-                return x(d.val) + "%"; })
-        .text(get('val'))
-        .append('span')
-            .attr('class', 'label')
-            .text(get('label'));
+    var x = d3.scale.linear()
+        .domain([0, d3.max(data, function(d) { return d.val; })])
+        .range([0, width]);
+
+    // nuke the old one
+    d3.select("." + inDivClass + " svg").remove();
+
+    var chart = d3.select("." + inDivClass).append("svg")
+        .attr("width", width)
+        .attr("height", barHeight * data.length);
+
+    var bar = chart.selectAll("g")
+        .data(data)
+      .enter().append("g")
+        .attr("class", "bar")
+        .attr("transform", function(d, i) { return "translate(0," + i * barHeight + ")"; });
+
+    bar.append("rect")
+        .attr("width", function(d) { return x(d.val); })
+        .attr("height", barHeight - 1);
+
+    bar.append('svg:a')
+        .attr('xlink:href', function(d) { return '/#/listing/' + inListingKind + '/' + d.label })
+    .append("text")
+        .attr("x", function(d) { return x(d.val) - 3; })
+        .attr("y", barHeight / 2)
+        .attr("dx", function(d) { return x(d.val) < outsideLabelThreshold ? "0.7em" : "-0.3em"; })
+        .attr("dy", "0.3em")
+        .attr("text-anchor", function(d) { return x(d.val) < outsideLabelThreshold ? "start" : "end"; })
+        .attr("class", function(d) { return x(d.val) < outsideLabelThreshold ? "label outside-label" : "label"; })
+        .text(function(d) { return d.label + " (" + formatCount(d.val) + ")"  });
 }
 
-function createFrequencyGraph(inDivClass, chartData) {
-    x = d3.scale.linear()
-        .domain([0, d3.max(chartData, get('val'))])
-        .range([0, 80]);
+function createHistogram(values, inListingKind) {
+    console.log('histogram kind ' + inListingKind);
 
-    d3.select('.' + inDivClass)
-        .selectAll("div")
-            .data(chartData)
-        .enter().append("div")
-            .attr('class', get('label'))
-            .style("width", function(d) { 
-                return x(d.val) + "%"; })
-        .text(get('val'))
-        .append('span')
-            .attr('class', 'label')
-            .text(get('label'));
-
-}
-
-function createHistogram(values) {
     // A formatter for counts.
     var formatCount = d3.format(",.0f");
 
@@ -54,10 +57,14 @@ function createHistogram(values) {
         width = 960 - margin.left - margin.right,
         height = 500 - margin.top - margin.bottom;
 
+    var extent = d3.extent(values);
+    extent[0] = 0;
+
     var x = d3.scale.linear()
-        .domain(d3.extent(values))
+        .domain(extent)
         .range([0, width]);
-    console.log(d3.extent(values));
+
+    console.log(extent);
 
     // Generate a histogram using twenty uniformly-spaced bins.
     var data = d3.layout.histogram()
@@ -71,6 +78,9 @@ function createHistogram(values) {
     var xAxis = d3.svg.axis()
         .scale(x)
         .orient("bottom");
+
+    // nuke the old one
+    d3.select(".histogram svg").remove();
 
     var svg = d3.select(".histogram").append("svg")
         .attr("width", width + margin.left + margin.right)
@@ -94,6 +104,7 @@ function createHistogram(values) {
         .attr("y", 6)
         .attr("x", (x(data[0].x + data[0].dx) - x(data[0].x)) / 2)
         .attr("text-anchor", "middle")
+        .attr("class", "label")
         .text(function(d) { return formatCount(d.y); });
 
     svg.append("g")
@@ -107,7 +118,9 @@ function createHistogram(values) {
 
 function createPieChart(data) {
     console.log('create pie');
-    console.log(data);
+
+    // nuke the old one
+    d3.select(".pie svg").remove();
 
     var width = 960,
         height = 500,
@@ -147,6 +160,7 @@ function createPieChart(data) {
       .attr("transform", function(d) { return "translate(" + arc.centroid(d) + ")"; })
       .attr("dy", ".35em")
       .style("text-anchor", "middle")
+      .attr("class", "label")
       .text(function(d) { return d.data.label; });
 }
 
