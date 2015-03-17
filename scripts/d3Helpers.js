@@ -33,7 +33,13 @@ function createFrequencyGraph(inDivClass, inListingKind, data) {
 
     bar.append("rect")
         .attr("width", function(d) { return x(d.val); })
-        .attr("height", barHeight - 1);
+        .attr("height", barHeight - 1)
+        .on("mouseover", function(d) {
+            d3.select(this).classed('active', true);
+        })
+        .on("mouseout", function(d) {
+            d3.select(this).classed('active', false);
+        });
 
     bar.append('svg:a')
         .attr('xlink:href', function(d) { return '/#/listing/' + inListingKind + '/' + d.label })
@@ -47,8 +53,10 @@ function createFrequencyGraph(inDivClass, inListingKind, data) {
         .text(function(d) { return d.label + " (" + formatCount(d.val) + ")"  });
 }
 
-function createHistogram(values, inListingKind) {
-    console.log('histogram kind ' + inListingKind);
+function createHistogram(values, useDateRange) {
+    console.log('createHistogram ' + useDateRange);
+
+    var outsideLabelThreshold = 400;
 
     // A formatter for counts.
     var formatCount = d3.format(",.0f");
@@ -58,7 +66,11 @@ function createHistogram(values, inListingKind) {
         height = 500 - margin.top - margin.bottom;
 
     var extent = d3.extent(values);
-    extent[0] = 0;
+
+    // don't include 0 in xRange if we're doing dates
+    if (! useDateRange) {      
+        extent[0] = 0;
+    }
 
     var x = d3.scale.linear()
         .domain(extent)
@@ -79,6 +91,11 @@ function createHistogram(values, inListingKind) {
         .scale(x)
         .orient("bottom");
 
+    // use date formatting for dates
+    if (useDateRange) {
+        xAxis.tickFormat(function(d) { var tmp = new Date(d); return (1+ tmp.getMonth()) + "/" + (1900+tmp.getYear()); });
+    }
+
     // nuke the old one
     d3.select(".histogram svg").remove();
 
@@ -97,14 +114,20 @@ function createHistogram(values, inListingKind) {
     bar.append("rect")
         .attr("x", 1)
         .attr("width", x(data[0].x + data[0].dx) - x(data[0].x) - 1)
-        .attr("height", function(d) { return height - y(d.y); });
+        .attr("height", function(d) { return height - y(d.y); })
+        .on("mouseover", function(d) {
+            d3.select(this).classed('active', true);
+        })
+        .on("mouseout", function(d) {
+            d3.select(this).classed('active', false);
+        });
 
     bar.append("text")
-        .attr("dy", ".75em")
-        .attr("y", 6)
         .attr("x", (x(data[0].x + data[0].dx) - x(data[0].x)) / 2)
+        .attr("y", 6)
+        .attr("dy", function(d) { return y(d.y) > outsideLabelThreshold? "-1em" : "1em"; })
         .attr("text-anchor", "middle")
-        .attr("class", "label")
+        .attr("class", function(d) { return y(d.y) > outsideLabelThreshold? "outside-label label" : "label"; })
         .text(function(d) { return formatCount(d.y); });
 
     svg.append("g")

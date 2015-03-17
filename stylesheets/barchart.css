@@ -1,3 +1,11 @@
+.billpill {
+  background: #f3f3f3;
+  font-size: 75%;
+  font-weight: bold;
+  padding: 0.2em 0.6em 0.3em;
+  border-radius: 0.25em;
+}
+
 .barchart div {
   background: lightgray;
   color: white;
@@ -9,6 +17,10 @@
   position: relative;
 }
 
+.active {
+  fill: black;
+}
+
 .barchart .label {
   text-overflow: ellipsis;
   position: absolute;
@@ -18,7 +30,16 @@
   fill: steelblue;
 }
 
-.bar rect {
+.histogram .label {
+  text-overflow: ellipsis;
+  position: absolute;
+}
+
+.histogram .outside-label {
+  fill: steelblue;
+}
+
+.bar {
   fill: steelblue;
   shape-rendering: crispEdges;
 }

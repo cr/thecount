@@ -7,14 +7,15 @@
   <link rel="stylesheet" href="/stylesheets/barchart.css" type="text/css">
   <link rel="stylesheet" href="/stylesheets/tablesorter.blue.css" type="text/css">
   <link rel="stylesheet" href="/stylesheets/datepicker.css" type="text/css">
+
 </head>
 
 <body>
-	<script type="text/x-handlebars">
-		<div class="navbar navbar-inverse navbar-fixed-top">
+	<script type="text/x-handlebars" data-template-name="application">
+		<div class="navbar navbar-default navbar-fixed-top">
 			<div class="container">
 				<div class="navbar-header">
-					<a href="#/listing/min_ratings/30" class="navbar-brand">TheCount</a>
+					{{#link-to 'index' class="navbar-brand"}}TheCount{{/link-to}}
 				</div>
 
 				<div class="collapse navbar-collapse">
@@ -32,13 +33,20 @@
 							<a href="#" data-toggle="dropdown" class="dropdown-toggle">discovery<b class='caret'></b></a>
 
 							<ul class="dropdown-menu">
-								<li><a href="#/frequency/category">category</a></li>
-								<li><a href="#/frequency/author">author</a></li>
-								<li><a href="#/distribution/days_since_created">days since created</a></li>
-								<li><a href="#/distribution/days_since_reviewed">days since reviewed</a></li>
-								<li><a href="#/frequency/locale">locale</a></li>
-								<li><a href="#/frequency/region">region</a></li>
-								<li><a href="#/pie/installs_allowed_from">installs_allowed_from</a></li>
+								<li>{{#link-to 'frequency' 'category'}}category{{/link-to}}</li>
+								<li>{{#link-to 'frequency' 'content_rating_descriptor'}}content rating descriptor{{/link-to}}</li>
+								<li>{{#link-to 'frequency' 'author'}}author{{/link-to}}</li>
+								<li>{{#link-to 'distribution' 'creation_date'}}creation date{{/link-to}}</li>
+								<li>{{#link-to 'distribution' 'reviewed_date'}}reviewed date{{/link-to}}</li>
+								<li>{{#link-to 'distribution' 'last_updated_date'}}last updated date{{/link-to}}</li>
+								<li>{{#link-to 'distribution' 'price'}}price{{/link-to}}</li>
+								<li>{{#link-to 'distribution' 'abuse_report_count'}}# of abuse reports{{/link-to}}</li>
+								<li>{{#link-to 'distribution' 'install_count'}}# of installs{{/link-to}}</li>
+								<li>{{#link-to 'distribution' 'number_of_versions'}}number of versions{{/link-to}}</li>
+								<li>{{#link-to 'distribution' 'number_of_previews'}}number of previews{{/link-to}}</li>
+								<li>{{#link-to 'frequency' 'locale'}}locale{{/link-to}}</li>
+								<li>{{#link-to 'frequency' 'region'}}region{{/link-to}}</li>
+								<li>{{#link-to 'pie' 'installs_allowed_from'}}installs_allowed_from{{/link-to}}</li>
 							</ul>
 						</li>
 
@@ -46,30 +54,34 @@
 							<a href="#" data-toggle="dropdown" class="dropdown-toggle">tech<b class='caret'></b></a>
 
 							<ul class="dropdown-menu">
-								<li><a href="#/frequency/platform">platform</a></li>
-								<li><a href="#/frequency/payment">payment</a></li>
-								<li><a href="#/frequency/library">library</a></li>
-								<li><a href="#/distribution/package_size">package size</a></li>
-								<li><a href="#/frequency/icon_sizes">icon sizes</a></li>
-								<li><a href="#/frequency/permission">permission</a></li>
-								<li><a href="#/frequency/activity">activity</a></li>
+								<li>{{#link-to 'frequency' 'platform'}}platform{{/link-to}}</li>
+								<li>{{#link-to 'frequency' 'payment'}}payment{{/link-to}}</li>
+								<li>{{#link-to 'frequency' 'library'}}library{{/link-to}}</li>
+								<li>{{#link-to 'distribution' 'package_size'}}package sizes{{/link-to}}</li>
+								<li>{{#link-to 'frequency' 'icon_sizes'}}icon sizes{{/link-to}}</li>
+								<li>{{#link-to 'frequency' 'permission'}}permission{{/link-to}}</li>
+								<li>{{#link-to 'frequency' 'activity'}}activity{{/link-to}}</li>
 							</ul>
 						</li>
 					</ul>
 
-					<form class="navbar-form navbar-left">
-						<div class="form-group input-group-sm">
-							{{input valueBinding="searchText" class='formControl' placeholder='search text'}}
+					<form class="navbar-form navbar-left" role="search">
+						<div class="form-group">
+							{{input valueBinding="searchText" size='10' class='form-control' placeholder='search text'}}
 						</div>
-						<button class="btn btn-primary btn-sm searchButton" {{action 'search'}}>
+						<button type="submit" class="btn btn-default searchButton" {{action 'search'}}>
 							Search
 						</button>
 					</form>
 
 					<form class="navbar-form navbar-left">
-						<div class="form-group input-group-sm">
-							<input id="since" name="since" type="text" placeholder="since" data-date-format="yyyy-mm-dd" autocomplete="off" class="form-control datepicker">
-							<input id="until" name="until" type="text" placeholder="until" data-date-format="yyyy-mm-dd" autocomplete="off" class="form-control datepicker">
+						<div class="form-group">
+							{{#view TheCount.MyTextField placeholder='since' id='since' viewName='since' controllerBinding='TheCount.ApplicationController'}}
+							{{/view}}
+							{{#view TheCount.MyTextField placeholder='until' id='until' viewName='until'  controllerBinding='TheCount.ApplicationController'}}
+							{{/view}}
+							{{#view TheCount.MyTextField placeholder='min_ratings' id='min_ratings' viewName='min_rating'  controllerBinding='TheCount.ApplicationController'}}
+							{{/view}}
 						</div>
 					</form>					
 
@@ -80,7 +92,102 @@
 
 		<div style="margin-top: 60px"></div>
 
+		<div class='container'>
+			<div class='row'>
+				<div class='col-md=12'>
+					<div id='alertContainer'>
+					</div>
+				</div>
+			</div>
+		</div>
+
 		{{outlet}}
+	</script>
+
+	<script type="text/x-handlebars" data-template-name="index">
+		<div class='container'>
+			<div class='row'>
+				<div class='col-md-8'>
+					<h1>Welcome to TheCount</h1>
+
+					<p>
+						TheCount is a Node.js/Ember.js app based around the Firefox Marketplace API.
+						It serves two purposes.
+						First, it provides aggregate statistics on the Firefox Marketplace catalog, showing which permissions are most popular, graphing the distribution of packaged app sizes, and so forth.
+						Second, it shows how a third party can construct their own app store using the Firefox Marketplace API to populate their store with a wide variety of content.
+					</p>
+
+					<p>
+						TheCount is using a snapshot of the FirefoxMarketplace catalog with {{formatNumber appCount}} apps by {{formatNumber authorCount}} authors. Users have provided {{formatNumber ratingCount}} ratings of those apps.
+					</p>
+					<p>
+						The first app was created on {{formatDate earliestCreated}},
+						the most recent on {{formatDate latestCreated}}
+					</p>
+
+				</div>
+				<div class='col-md-4'>			
+					<h2>Getting Started</h2>
+
+					<p>Here are some jumping off points for exploring TheCount:</p>
+
+					<ul class='list-group'>					
+						<li class='list-group-item'>{{#link-to 'apps' 'min_ratings' 30}}Apps with at least 30 user ratings{{/link-to}}</li>
+						<li class='list-group-item'>{{#link-to 'frequency' 'platform'}}Frequency of platform and packaging categories{{/link-to}}</li>
+						<li class='list-group-item'>{{#link-to 'frequency' 'permission'}}Most frequently requested app permissions{{/link-to}}</li>
+						<li class='list-group-item'>{{#link-to 'distribution' 'package_size'}}Distribution of packaged app sizes{{/link-to}}</li>
+						<li class='list-group-item'>{{#link-to 'frequency' 'library'}}Most commonly used JS and CSS libraries{{/link-to}}</li>
+					</ul>
+				</div>
+			</div>
+		</div>
+	</script>
+
+	<script type="text/x-handlebars" data-template-name="table">
+		<div class='container'>
+			<div class='row'>
+				<div class='col-md-4'>
+				<table class='table table-condensed table-striped'>
+					<tr>
+						<th>category</th>
+						<th style="text-align: right">packaged</th>
+						<th style="text-align: right">hosted</th>
+						<th style="text-align: right">privileged</th>
+						<th style="text-align: right">fullscreen</th>
+						<th style="text-align: right">meta_viewport</th>
+						<th style="text-align: right">tarako</th>
+						<th style="text-align: right">desktop</th>
+						<th style="text-align: right">firefox os</th>
+						<th style="text-align: right">android tablet</th>
+						<th style="text-align: right">android mobile</th>
+						<th style="text-align: right">appcache</th>
+						<th style="text-align: right">browser chrome</th>
+						<th style="text-align: right">fullscreen</th>
+						<th style="text-align: right">TOTAL</th>
+					</tr>
+					{{#each tableData}}
+						<tr>
+							<td>{{category}}</td>
+							<td style="text-align: right">{{formatNumber packaged}}</td>
+							<td style="text-align: right">{{formatNumber hosted}}</td>
+							<td style="text-align: right">{{formatNumber privileged}}</td>
+							<td style="text-align: right">{{formatNumber fullscreen}}</td>
+							<td style="text-align: right">{{formatNumber meta_viewport}}</td>
+							<td style="text-align: right">{{formatNumber tarako}}</td>
+							<td style="text-align: right">{{formatNumber desktop}}</td>
+							<td style="text-align: right">{{formatNumber firefoxos}}</td>
+							<td style="text-align: right">{{formatNumber androidtablet}}</td>
+							<td style="text-align: right">{{formatNumber androidmobile}}</td>
+							<td style="text-align: right">{{formatNumber appcache}}</td>
+							<td style="text-align: right">{{formatNumber browser_chrome}}</td>
+							<td style="text-align: right">{{formatNumber fullscreen}}</td>
+							<td style="text-align: right">{{formatNumber total}}</td>
+						</tr>
+					{{/each}}
+				</table>
+				</div>
+			</div>
+		</div>
 	</script>
 
 	<script type="text/x-handlebars" data-template-name="apps">
@@ -103,7 +210,7 @@
 					{{#each}}
 						<tr>
 							<td><img width='32' height='32' {{bind-attr src=icons.[128]}} ></td>
-							<td>{{#linkTo 'app' this}}{{appName this.name}}{{/linkTo}}</td>
+							<td>{{#link-to 'app' this}}{{englishOrOther this.name}}{{/link-to}}</td>
 							<td>{{author}}</td>
 							<td>{{daysSince reviewed}}</td>
 							<td style='white-space: nowrap'>
@@ -131,132 +238,148 @@
 	</script>
 
 	<script type="text/x-handlebars" data-template-name="app">
+
+		<div id='screenshot-modal' class="modal fade">
+			<div class="modal-dialog">
+				<div class="modal-content">
+					<div class="modal-body">
+						<center><img id='screenshot'></center>
+					</div>
+					<div class="modal-footer">
+						<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+					</div>
+				</div><!-- /.modal-content -->
+			</div><!-- /.modal-dialog -->
+		</div><!-- /.modal -->
+
 		<div class='container'>
 			<div class='row'>
+		        <div class="col-md-12">
+			        <div class='media'>
+				        <div class='media-left'>
+							<img class='media-object' {{bind-attr src=icons.[128]}} >
+						</div>
 
-		        <div class="col-md-6">
-					<h2>
-						<img width='32' height='32' {{bind-attr src=icons.[128]}} >
-						<span>{{appName this.name}}</span>
-					</h2>
-		        </div>
+						<div class='media-body'>
+							<h1 class='media-heading'>
+								{{englishOrOther this.name}}</span>
+							</h1>
 
-		        <div style="text-align: right" class="col-md-6">
-		        	<h3>
-			        	{{#if is_packaged}}
-			        		<span class='glyphicon glyphicon-file'></span>
-			        	{{else}}
-			        		<span class='glyphicon glyphicon-cloud'></span>
-			        	{{/if}}
-			        	{{#if is_offline}}
-			        		<span class='glyphicon glyphicon-plane'></span>
-			        	{{/if}}
-			        	{{#if isPaidApp}}
-			        		<span class='glyphicon glyphicon-usd'></span>
-			        	{{/if}}
-		        	</h3>
-		        </div>
+							<div style='padding-bottom: 5px'>
+				        		<span class='billpill'>{{#link-to 'apps' 'author' author}}<span class='glyphicon glyphicon-user'></span> {{author}}{{/link-to}}</span>
+								<span class='billpill'>{{{stars ratings.average}}} ({{formatNumber ratings.count}})</span>
+								<span class='billpill'><span class='glyphicon glyphicon-time'></span> Created {{formatDate created}}</span>
+								<span class='billpill'><span class='glyphicon glyphicon-time'></span> Reviewed {{formatDate reviewed}}</span>
+								<span class='billpill'><span class='glyphicon glyphicon-time'></span> Last Updated {{formatDate last_updated}}</span>
+							</div>
+
+							<div style='padding-bottom: 10px'>
+					        	{{#if is_packaged}}
+					        		<span class='billpill'><span class='glyphicon glyphicon-file'></span> Packaged</span>
+					        	{{else}}
+					        		<span class='billpill'><span class='glyphicon glyphicon-cloud'></span> Hosted</span>
+					        	{{/if}}
+					        	{{#if is_offline}}
+					        		<span class='billpill'><span class='glyphicon glyphicon-plane'></span> Offline</span>
+					        	{{/if}}
+					        	{{#if isPaidApp}}
+					        		<span class='billpill'><span class='glyphicon glyphicon-usd'></span> Premium</span>
+					        	{{/if}}
+								{{#each theType in device_types}}
+									<span class='billpill'>{{theType}}</span>
+								{{/each}}
+								{{#each theCategory in categories}}
+									<span class='billpill'>{{theCategory}}</span>
+								{{/each}}
+								{{#each theTag in tags}}
+									<span class='billpill'>{{theTag}}</span>
+								{{/each}}
+							</div>
+
+							{{#if alreadyInstalled}}
+								<button {{action 'launch'}} class="btn btn-primary launchButton">
+									Launch
+								</button>
+							{{else}}
+								{{#if isPaidApp}}
+									<a target="_blank" {{bind-attr href=marketplaceLink}} class="btn btn-primary">
+										<span>Buy at Firefox Marketplace</span>
+									</a>
+								{{else}}
+									<button {{action 'install'}} class="btn btn-primary installButton">
+										{{#if is_packaged}}
+											Install Packaged
+										{{else}}
+											Install Hosted
+										{{/if}}
+									</button>
+								{{/if}}
+							{{/if}}
+
+							<span id="progress"></span>
+
+							{{#if is_packaged}}
+								<a class='btn btn-info' {{bind-attr href=miniManifest.package_path}} >
+								    <span class="glyphicon glyphicon-file"></span>
+								    <span>download package</span>
+								</a>
+							{{else}}
+								<button {{action 'launchInTab'}} class="btn btn-primary">
+									<span class='glyphicon glyphicon-share-alt'> </span>
+									Launch in Tab
+								</button>
+							{{/if}}
+
+							<span>
+								<a target="_blank" {{bind-attr href=marketplaceLink}} class="btn btn-info">
+									<span class='glyphicon glyphicon-share-alt'> </span>
+									<span>marketplace</span>
+								</a>
+							</span>	
+						</div>
+					</div>
+				</div>
 	        </div>
 
+			<hr />	        
+
 			<div class='row'>
-				<div class='col-md-12'>
-					{{#if alreadyInstalled}}
-						<button {{action 'launch'}} class="btn btn-primary launchButton">
-							Launch
-						</button>
-					{{else}}
-						{{#if isPaidApp}}
-							<a target="_blank" {{bind-attr href=marketplaceLink}} class="btn btn-primary">
-								<span>Buy at Firefox Marketplace</span>
-							</a>
-						{{else}}
-							<button {{action 'install'}} class="btn btn-primary installButton">
-								{{#if is_packaged}}
-									Install Packaged
-								{{else}}
-									Install Hosted
-								{{/if}}
-							</button>
-						{{/if}}
-					{{/if}}
-
-					<span id="progress"></span>
-
-					{{#if is_packaged}}
-						<a class='btn btn-info' {{bind-attr href=miniManifest.package_path}} >
-						    <span class="glyphicon glyphicon-file"></span>
-						    <span>download package {{formatNumber miniManifest.size}} bytes</span>
-						</a>
-					{{/if}}
-
-					<span>
-						<a target="_blank" {{bind-attr href=marketplaceLink}} class="btn btn-info">
-							<span class='glyphicon glyphicon-share-alt'> </span>
-							<span>marketplace</span>
-						</a>
-					</span>	
-
-					<hr />			
-
-					<div>{{{description.en-US}}}</div>
+				<div class='col-md-6'>
+					<div>{{{englishOrOther this.description}}}</div>					
 				</div>
-			</div>
 
-			<div class='row'>
-			    {{#each preview in previews}}
-			    	<div class='col-xs-6 col-md-3'>
-			    		<a href='#' class='thumbnail'>
-							<img {{bind-attr src=preview.thumbnail_url}} >
-						</a>	
-			    	</div>
-			    {{/each}}
+		    	<div class='col-md-6'>
+				    {{#each preview in previews}}
+			    		<a {{action 'pictureModal' preview.image_url}} target='_blank'>
+							<img style='padding: 5px' {{bind-attr src=preview.thumbnail_url}} />
+						</a>
+				    {{/each}}
+		    	</div>
 			</div>
 
 			<hr />
 
 			<div class='row'>
 				<div class='col-md-12'>
-					<h3>{{author}}</h3>
-
-					<div>
-						{{#each theType in device_types}}
-							<span class='label label-primary'>{{theType}}</span>
-						{{/each}}
-						{{#each theCategory in categories}}
-							<span class='label label-default'>{{theCategory}}</span>
-						{{/each}}
-						{{#each theTag in tags}}
-							<span class='label label-info'>{{theTag}}</span>
-						{{/each}}
-					</div>
-
-					<h4>
-						{{{stars ratings.average}}}
-						({{formatNumber ratings.count}})
-					</h4>
-
-					<p>
-						<span class='glyphicon glyphicon-time'> </span>
-						Created {{created}} ({{daysSince created}} days ago)
-					</p>
-
-					<p>
-						<span class='glyphicon glyphicon-time'> </span>
-						Reviewed {{reviewed}} ({{daysSince reviewed}} days ago)
-					</p>
-
 					{{#if manifest}}
 						<h3>manifest</h3>
+						{{#if is_packaged}}
+							from {{miniManifest.package_path}}
+						{{else}}
+							{{manifest_url}}
+						{{/if}}
 						<pre>{{json manifest}}</pre>
 					{{/if}}
 
 					{{#if miniManifest}}
 						<h3>mini manifest</h3>
+						{{manifest_url}}
 						<pre>{{json miniManifest}}</pre>
 					{{/if}}
 
 					{{#if appcache_manifest}}
-						<h3>appcache_manifest</h3>
+						<h3>appcache manifest</h3>
+						{{manifest.appcache_path}}
 						<pre>{{appcache_manifest}}</pre>
 					{{/if}}
 				</div>

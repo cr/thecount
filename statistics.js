@@ -20,6 +20,16 @@ function getValues(inApps, getIntValuePerAppFn) {
     return { total: appsFound, values: values, average: Math.round(100.0 * sumOfValues / (1.0 * appsFound)) / 100.0 }
 }
 
+// returns the price for paid apps, null otherwise
+
+function getPrice(inApp) {
+    if (inApp.price) {
+        return inApp.price;
+    } else {
+        return null;
+    }
+}
+
 // returns the average rating for apps with more than five ratings, null otherwise
 
 function getAverageRating(inApp) {
@@ -30,6 +40,27 @@ function getAverageRating(inApp) {
     }
 }
 
+// returns the number of abuse reports filed for this app, null otherwise
+
+function getAbuseReportCount(inApp) {
+    if (inApp.appStats && inApp.appStats.abuse_reports) {
+        return inApp.appStats.abuse_reports.total;
+    } else {
+        return null;
+    }
+}
+
+// returns the number of installs recorded for this app, null otherwise
+
+function getInstallCount(inApp) {
+    if (inApp.appStats && inApp.appStats.installs) {
+        return inApp.appStats.installs.total;
+    } else {
+        return null;
+    }
+}
+
+
 // returns the number of user ratings for apps with 50 or fewer ratings; null otherwise
 
 function getRatingCount(inApp) {
@@ -37,6 +68,16 @@ function getRatingCount(inApp) {
         return null;
     } else {
         return inApp.ratings.count;
+    }
+}
+
+// returns the number of user ratings for apps with 50 or fewer ratings; null otherwise
+
+function getNumberOfVersions(inApp) {
+    if (! inApp.versions ){ 
+        return null;
+    } else {
+        return Object.keys(inApp.versions).length;
     }
 }
 
@@ -52,6 +93,16 @@ function getPackageSize(inApp) {
     }
 
     return null;
+}
+
+// returns the manifest protocol
+
+function getManifestProtocol(inApp) {
+    if (inApp.manifest_url && inApp.manifest_url.indexOf('https') >= 0) {
+        return ['https'];
+    } else {
+        return ['http'];
+    }
 }
 
 // returns how many days since the app was reviewed
@@ -70,6 +121,71 @@ function getDaysSinceCreated(inApp) {
     return (now - reviewedDate) / (24 * 60 * 60 * 1000.0);
 }
 
+// returns date when app was reviewed
+
+function getReviewedDate(inApp) {
+    return Date.parse(inApp.reviewed);
+}
+
+// returns date when app was created
+
+function getCreationDate(inApp) {
+    return Date.parse(inApp.created);
+}
+
+// returns date when app was last updated
+
+function getLastUpdatedDate(inApp) {
+    return Date.parse(inApp.last_updated);
+}
+
+// Create two dimensional table counting platform designators versus app categories
+
+function getPackagedCategoryTable(inApps) {
+    var counts = {};
+    var appCount = 0;
+    var allPlatformCategories = getAllPlatformCategories();
+
+    for (index in inApps) {
+        var app = inApps[index];
+        var platformStrings = getPlatformCategories(app);
+
+        appCount++;
+
+        for (catIndex in app.categories) {
+            var catString = app.categories[catIndex];
+
+            if (! counts[catString]) {
+                counts[catString] = {};
+                counts[catString]['category'] = catString;
+
+                for (var initIndex in allPlatformCategories) {
+                    var initPlatformCategory = allPlatformCategories[initIndex];
+                    counts[catString][initPlatformCategory] = 0;
+                    counts[catString]['total'] = 0;
+                }
+            }
+
+            counts[catString]['total']++;
+
+            for (var platIndex in platformStrings) {
+                var aPlatformString = platformStrings[platIndex];
+                counts[catString][aPlatformString]++;
+            }
+        }
+    }    
+
+    var countsArray = [];
+
+    for (var index2 in counts) {
+        countsArray.push(counts[index2]);
+        // console.log(counts[index2]);
+    }
+
+    console.log('app count', appCount);
+    return countsArray;
+}
+
 // FREQUENCY HELPER CODE
 
 // computes the frequency of occurrence of strings associated with each app
@@ -77,8 +193,6 @@ function getDaysSinceCreated(inApp) {
 // any number of string values.
 
 function getFrequency(inApps, getArrayOfStringsPerAppFn) {
-    console.log('getFrequency');
-
     var counts = {};
     var appsFound = 0;
 
@@ -116,7 +230,7 @@ function getFrequency(inApps, getArrayOfStringsPerAppFn) {
         return b.val - a.val;
     });
 
-    return {total: appsFound, chartData: chartData};
+    return {total: appsFound, chartData: chartData.slice(0, 40)};
 }
 
 // returns the author of an app
@@ -171,6 +285,17 @@ function getPermissionKeys(inApp) {
     }
 }
 
+// returns the list of permission strings for the given app
+
+function getContentRatingDescriptors(inApp) {
+    if (inApp.content_ratings && inApp.content_ratings.descriptors && (inApp.content_ratings.descriptors.length > 0)) {
+        return inApp.content_ratings.descriptors;
+    } else {
+        return [];
+    }
+}
+
+
 // returns the list of icon sizes for the given app
 
 function getIconSizes(inApp) {
@@ -178,6 +303,16 @@ function getIconSizes(inApp) {
         return Object.keys(inApp.manifest.icons);
     } else {
         return [];
+    }
+}
+
+// returns the number of previews
+
+function getNumberOfPreviews(inApp) {
+    if (inApp.previews) {
+        return inApp.previews.length;
+    } else {
+        return 0;
     }
 }
 
@@ -247,6 +382,10 @@ function getPaymentCategories(inApp) {
 
 // returns a list of platform category strings for the given app,
 
+function getAllPlatformCategories() {
+    return ['hosted', 'privileged', 'desktop', 'appcache', 'browser_chrome', 'packaged', 'firefoxos', 'fullscreen', 'meta_viewport', 'public_stats', 'tarako', 'android', 'androidtablet', 'androidmobile'];
+}
+
 function getPlatformCategories(inApp) {
     var categories = []
 
@@ -261,14 +400,15 @@ function getPlatformCategories(inApp) {
     if (inApp.manifest && inApp.manifest.appcache_path) { categories.push('appcache'); }
     if (inApp.manifest && inApp.manifest.fullscreen) { categories.push('fullscreen'); }
     if (inApp.meta_viewport) { categories.push('meta_viewport'); }
+    if (inApp.public_stats) { categories.push('public_stats'); }
 
     if (inApp.tags.indexOf('tarako') > -1) { categories.push('tarako'); }
     
     if (inApp.device_types.indexOf('desktop') > -1) { categories.push('desktop'); }
-    if (inApp.device_types.indexOf('firefoxos') > -1) { categories.push('firefox os'); }
-    if (inApp.device_types.indexOf('android-tablet') > -1) { categories.push('android tablet'); categories.push('android'); }
-    if (inApp.device_types.indexOf('android-mobile') > -1) { categories.push('android mobile'); categories.push('android'); }
-    
+    if (inApp.device_types.indexOf('firefoxos') > -1) { categories.push('firefoxos'); }
+    if (inApp.device_types.indexOf('android-tablet') > -1) { categories.push('androidtablet'); }
+    if (inApp.device_types.indexOf('android-mobile') > -1) { categories.push('androidmobile'); }
+    if ((inApp.device_types.indexOf('android-tablet') > -1) || (inApp.device_types.indexOf('android-mobile') > -1)) { categories.push('android'); }
     return categories;
 }
 
@@ -290,6 +430,7 @@ knownLibraries['bootstrap.js'] = 'Bootstrap';
 knownLibraries['bootstrap-responsive.css'] = 'Bootstrap';
 knownLibraries['bootstrap.min.js'] = 'Bootstrap';
 knownLibraries['bootstrap.min.css'] = 'Bootstrap';
+knownLibraries['bootstrap.css'] = 'Bootstrap';
 
 knownLibraries['backbone.js'] = 'Backbone';
 knownLibraries['backbone-min.js'] = 'Backbone';
@@ -309,6 +450,8 @@ knownLibraries['jquery-1.9.1.min.js'] = 'jQuery';
 knownLibraries['jquery-2.0.2.js'] = 'jQuery';
 knownLibraries['jquery-2.0.3.js'] = 'jQuery';
 knownLibraries['jquery-2.1.1.min.js'] = 'jQuery';
+knownLibraries['jquery-2.0.0.min.js'] = 'jQuery';
+knownLibraries['jquery.min.js'] = 'jQuery';
 knownLibraries['jquery.js'] = 'jQuery';
 
 knownLibraries['localforage.js'] = 'LocalForage';
@@ -509,15 +652,47 @@ function getLibraryNames(inApp) {
         return self.indexOf(elem) == pos;
     });
 
+    if (uniqueLibraries.length == 0) {
+        uniqueLibraries.push('Unknown');
+    }
+
     return uniqueLibraries;
+}
+
+// returns a list of filenames not associated with libraries
+
+function getUnknownFilenames(inApp) {
+    var filteredFilenames = getFilenames(inApp);
+
+    var unknownFilenames = [];
+
+    for (var index in filteredFilenames) {
+        var filename = filteredFilenames[index];
+        if (! knownLibraries[filename]) {
+            unknownFilenames.push(filename);
+        }
+    }
+
+    return unknownFilenames;
 }
 
 function computeGlobalStatistics(marketplaceCatalog) {
     var authors = [];
+    var earliestCreated = new Date();
+    var latestCreated = new Date(0);
     var ratingCount = 0;
 
     for (index in marketplaceCatalog) {
         var marketplaceApp = marketplaceCatalog[index];
+        var createdDate = Date.parse(marketplaceApp.created);
+
+        if (createdDate < earliestCreated) {
+            earliestCreated = createdDate;
+        }
+
+        if (createdDate > latestCreated) {
+            latestCreated = createdDate;
+        }
 
         if (authors.indexOf(marketplaceApp.author) < 0) {
             authors.push(marketplaceApp.author);
@@ -531,28 +706,43 @@ function computeGlobalStatistics(marketplaceCatalog) {
     return {
         appCount: Object.keys(marketplaceCatalog).length,
         authorCount: authors.length,
-        ratingCount: ratingCount
+        ratingCount: ratingCount,
+        earliestCreated: earliestCreated,
+        latestCreated: latestCreated
     };
 }
 
 // We export these functions for use by the server (see server.js)
 
 module.exports.getLibraryNames = getLibraryNames;
+module.exports.getUnknownFilenames = getUnknownFilenames;
 module.exports.knownLibraries = knownLibraries;
 module.exports.getValues = getValues;
 
+module.exports.getPackagedCategoryTable = getPackagedCategoryTable;
+
 module.exports.getRatingCount = getRatingCount;
 module.exports.getAverageRating = getAverageRating;
+module.exports.getAbuseReportCount = getAbuseReportCount;
+module.exports.getInstallCount = getInstallCount;
+module.exports.getPrice = getPrice;
+module.exports.getNumberOfVersions = getNumberOfVersions;
 module.exports.getPackageSize = getPackageSize;
 module.exports.getDaysSinceCreated = getDaysSinceCreated;
 module.exports.getDaysSinceReviewed = getDaysSinceReviewed;
+module.exports.getCreationDate = getCreationDate;
+module.exports.getReviewedDate = getReviewedDate;
+module.exports.getLastUpdatedDate = getLastUpdatedDate;
 
 module.exports.getFrequency = getFrequency;
+module.exports.getManifestProtocol = getManifestProtocol;
 module.exports.getAuthor = getAuthor;
 module.exports.getOrientation = getOrientation;
 module.exports.getInstallsAllowedFrom = getInstallsAllowedFrom;
 module.exports.getPermissionKeys = getPermissionKeys;
+module.exports.getContentRatingDescriptors = getContentRatingDescriptors;
 module.exports.getIconSizes = getIconSizes;
+module.exports.getNumberOfPreviews = getNumberOfPreviews;
 module.exports.getSupportedLocales = getSupportedLocales;
 module.exports.getSupportedRegions = getSupportedRegions;
 module.exports.getCategoryStrings = getCategoryStrings;

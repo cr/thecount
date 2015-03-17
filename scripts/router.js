@@ -1,3 +1,40 @@
+// retrieve values from form to use with middleware on server
+
+function middlewareQueryParams() {
+  var sinceVal = $('#since').val();
+  if (sinceVal == null) { sinceVal = ''; }
+  
+  var untilVal = $('#until').val();
+  if (untilVal == null) { untilVal = ''; }
+
+  var minRatingsVal = $('#min_ratings').val();
+  if (minRatingsVal == null) { minRatingsVal = ''; }
+
+  console.log('middleware', sinceVal, untilVal, minRatingsVal);
+
+  return '?since=' + sinceVal +
+    '&until=' + untilVal +
+    '&min_ratings=' + minRatingsVal;
+}
+
+function insertAlert(inText) {
+  var newAlert = jQuery('<div/>', {
+    class: 'alert alert-warning alert-dismissible',
+    role: 'alert',
+    text: inText
+  });
+
+  jQuery('<button/>', {
+    type: 'button',
+    class: 'close',
+    'data-dismiss': 'alert',
+    'aria-label': 'Close',
+    text:'X'
+  }).appendTo(newAlert);
+
+  newAlert.appendTo('#alertContainer');
+}
+
 
 // ROUTES -------------------------------------------------
 
@@ -5,8 +42,25 @@ TheCount.Router.map(function() {
   this.resource('apps', { path: '/listing/:listing_kind/:listing_param' });
   this.resource('app', { path: '/app/:app_id'});
   this.resource('frequency', { path: '/frequency/:frequency_kind' });
+  this.resource('table', { path: '/table' });
   this.resource('distribution', { path: '/distribution/:distribution_kind' });
   this.resource('pie', { path: '/pie/:pie_kind' });
+  this.route('bad_url', { path: '/*badurl' });
+});
+
+TheCount.IndexRoute = Ember.Route.extend({
+  setupController: function(controller, data) {
+    controller.set('model', data);
+    console.log('IndexRoute.setupController');
+    document.title = 'TheCount | home';
+    $('.loading').hide();
+  },
+  model: function(params) {
+    $('.loading').show();
+
+    console.log('fetching /globalstatistics');
+    return Ember.$.getJSON('/globalstatistics');
+  }
 });
 
 TheCount.AppsRoute = Ember.Route.extend({
@@ -22,12 +76,13 @@ TheCount.AppsRoute = Ember.Route.extend({
     this.set('listingKind', params.listing_kind);
     this.set('listingParam', params.listing_param);
     $('.loading').show();
-    return Ember.$.getJSON('/listing/' + params.listing_kind + '/' + params.listing_param + '?since=' + $('#since').val() + '&until=' + $('#until').val());
+    return Ember.$.getJSON('/listing/' + params.listing_kind + '/' + params.listing_param + middlewareQueryParams());
   },
   actions: {
     error: function(error, transition) {
       console.log('error in apps route');
-      console.log(error.responseText);
+      insertAlert('Cannot get listing');
+      console.log(error);
       $('.loading').hide();
     }
   }
@@ -37,7 +92,7 @@ TheCount.AppRoute = Ember.Route.extend({
   setupController: function(controller, app) {
     controller.set('model', app);
     $('.loading').hide();
-    document.title = 'TheCount | ' + getDisplayName(controller.get('model.name'));
+    document.title = 'TheCount | ' + getEnglishOrOther(controller.get('model.name'));
 
     // Either retrieve the manifest URL's of all installed apps or disable all install buttons
     var installedManifestURLs = [];
@@ -79,6 +134,8 @@ TheCount.AppRoute = Ember.Route.extend({
   actions: {
     error: function(error, transition) {
       console.log('error in app route');
+      insertAlert('Cannot fetch app details');
+      console.log(error);
       $('.loading').hide();
     }
   }
@@ -94,11 +151,14 @@ TheCount.FrequencyRoute = Ember.Route.extend({
   model: function(params) {
     this.set('frequencyKind', params.frequency_kind);
     $('.loading').show();
-    return Ember.$.getJSON('/frequency/' + params.frequency_kind + '?since=' + $('#since').val() + '&until=' + $('#until').val());
+
+    return Ember.$.getJSON('/frequency/' + params.frequency_kind + middlewareQueryParams());
   },
   actions: {
     error: function(error, transition) {
       console.log('error in frequency route');
+      insertAlert('Cannot fetch frequency data');
+      console.log(error);
       $('.loading').hide();
     }
   }
@@ -114,11 +174,13 @@ TheCount.DistributionRoute = Ember.Route.extend({
   model: function(params) {
     this.set('distributionKind', params.distribution_kind);
     $('.loading').show();
-    return Ember.$.getJSON('/distribution/' + params.distribution_kind + '?since=' + $('#since').val() + '&until=' + $('#until').val());
+    return Ember.$.getJSON('/distribution/' + params.distribution_kind + middlewareQueryParams());
   },
   actions: {
     error: function(error, transition) {
       console.log('error in distribution route');
+      insertAlert('Cannot fetch distribution data');
+      console.log(error);
       $('.loading').hide();
     }
   }
@@ -134,12 +196,35 @@ TheCount.PieRoute = Ember.Route.extend({
   model: function(params) {
     this.set('pieKind', params.pie_kind);
     $('.loading').show();
-    return Ember.$.getJSON('/pie/' + params.pie_kind + '?since=' + $('#since').val() + '&until=' + $('#until').val());
+    return Ember.$.getJSON('/pie/' + params.pie_kind + middlewareQueryParams());
   },
   actions: {
     error: function(error, transition) {
       console.log('error in pie route');
+      insertAlert('Cannot find pie chart data');
+      console.log(error);
       $('.loading').hide();
     }
   }
 });
+
+TheCount.TableRoute = Ember.Route.extend({
+  setupController: function(controller, data) {
+    controller.set('model', data);  
+    $('.loading').hide();
+    document.title = 'TheCount | packaged by category';
+  },
+  model: function(params) {
+    $('.loading').show();
+    return Ember.$.getJSON('/packaged_by_category' + middlewareQueryParams());
+  },
+  actions: {
+    error: function(error, transition) {
+      console.log('error in table route');
+      insertAlert('Cannot fetch table data');
+      console.log(error);
+      $('.loading').hide();
+    }
+  }
+});
+

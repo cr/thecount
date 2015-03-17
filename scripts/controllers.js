@@ -1,10 +1,26 @@
 // CONTROLLERS -------------------------------------------------
 
 TheCount.ApplicationController = Ember.Controller.extend({
-  search: function() {
-    console.log('ApplicationController search ' + this.get("searchText"));
-    this.transitionToRoute('apps', 'search', this.get("searchText"));
+  formDirty: false,
+  actions: {
+    search: function() {
+      console.log('ApplicationController search ' + this.get("searchText"));
+      return this.transitionToRoute('apps', 'search', this.get("searchText"));
+    }
   }
+});
+
+TheCount.MyTextField = Ember.TextField.extend({
+  formDirtyBinding: 'TheCount.ApplicationController.formDirty',
+  classNames: ['form-control'],
+  attributeBindings: ['size'],
+  controller: TheCount.ApplicationController,
+  size: 10,
+  value: '',
+  valueChanged: function() {
+    this.set('formDirty', !Ember.empty(this.value));
+    console.log('MyTextField', 'valueChanged', this.value);
+  }.observes('value')
 });
 
 TheCount.AppsController = Ember.ArrayController.extend({
@@ -16,7 +32,7 @@ TheCount.AppsController = Ember.ArrayController.extend({
       // do stuff with your data here
       console.log("I AM SORTING " + fieldName);
       this.set('sortProperties', [fieldName]);
-    }     
+    }
   }
 });
 
@@ -24,6 +40,8 @@ TheCount.AppController = Ember.ObjectController.extend({
   marketplaceLink: function() {
     return 'http://marketplace.firefox.com/app/' + this.get('model.slug');
   }.property('model.marketplaceLink'),
+  fullLaunchPath: function() {
+  }.property('model.fullLaunchPath'),  
   isPaidApp: function() {
     return this.get('model.premium_type') == 'premium';
   }.property('model.isPaidApp'),
@@ -41,6 +59,11 @@ TheCount.AppController = Ember.ObjectController.extend({
         request.onerror = installFail;
       }
     },
+    pictureModal: function(argument) {
+      console.log('picture Modal!', argument);
+      $('#screenshot').attr('src', argument);
+      $('#screenshot-modal').modal();
+    },
     launch: function() {
       console.log('actions.launch ' + this.get('model.manifest_url'));
       var appRecordsByManifest = this.get('appRecordsByManifest');
@@ -48,6 +71,21 @@ TheCount.AppController = Ember.ObjectController.extend({
       appRecordsByManifest[this.get('model.manifest_url')].launch(); 
       console.log('launched');
     },
+    launchInTab: function() {
+      var parser = document.createElement('a');
+
+      parser.href = this.get('model.manifest_url');
+      if (this.get('model.manifest.launch_path')) {
+        parser.pathname = this.get('model.manifest.launch_path');
+      } else {
+        parser.pathname = '';
+      }
+
+      window.open(
+        decodeURIComponent(parser.href),
+        'appname',
+        'width=240,height=320');
+    }
   }
 });
 
