@@ -264,7 +264,6 @@ function getMetrics(inApps, getArrayOfStringsPerAppFn) {
             }
         }
     }
-	console.log( "found " + appsFound + " apps for metrics" );
 
     var chartData = [];
 	var labels = [];
@@ -278,9 +277,7 @@ function getMetrics(inApps, getArrayOfStringsPerAppFn) {
 		id++;
     }
 
-    ret = {'total': appsFound, 'chartData': chartData, 'labels': labels};
-    ret = {'total': appsFound, 'chartData': chartData};
-	console.log(ret);
+    ret = {'total': appsFound, 'chartData': [{'data':chartData,'labels':labels}]};
 	return ret;
 }
 

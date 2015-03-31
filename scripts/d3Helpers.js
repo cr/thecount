@@ -63,7 +63,17 @@ function createMetricsGraph(inDivClass, inListingKind, data) {
     // data = Array[ Array [ Object, ... ], Array [ Object, ... ], ... ]
     // Object { date: Date 2013-12-31T23:00:00.000Z, value: 150000000, line_id: 2 }
 
-	data = [
+	var graphs = data[0]['data'];
+	var labels = data[0]['labels'];
+
+	// fix dates
+	for (var i = 0 ; i < graphs.length ; i++) {
+		for (var j = 0 ; j < graphs[i].length ; j++) {
+			graphs[i][j].date = new Date( graphs[i][j].date );
+		}
+	}
+
+	datatest = [
 		[
 			{ 'date': new Date('2014-10-01'), 'value':0.1, 'line_id': 0 },
 			{ 'date': new Date('2014-11-01'), 'value':0.2, 'line_id': 0 },
@@ -87,14 +97,14 @@ function createMetricsGraph(inDivClass, inListingKind, data) {
 
     // add a wide multi-line chart
     MG.data_graphic({
-        title:"Multi-Line Chart Wide",
-        description: "This line chart contains multiple lines and has extended ticks enabled.",
+        title:"Library Metrics",
+        description: "This plot shows usage of libraries over time in onthly aggregation.",
         area: false,
-        legend: ['Line 1','Line 2','Line 3'],
+        legend: labels,
         legend_target: '.metricslegend',
-        data: data,
+        data: graphs,
         width: width,
-        height: 700,
+        height: 500,
         //right: 1000,
         show_secondary_x_label: false,
         xax_tick: 0,
