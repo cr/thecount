@@ -580,6 +580,7 @@ var graphs = [
     { kind: 'frequency', routeFragment: 'unknown', title: 'unknown filenames', getter: statistics.getUnknownFilenames },
     { kind: 'frequency', routeFragment: 'icon_sizes', title: 'icon sizes', getter: statistics.getIconSizes },
     { kind: 'frequency', routeFragment: 'library', title: 'library', getter: statistics.getLibraryNames },
+    { kind: 'metrics', routeFragment: 'library', title: 'library metrics', getter: statistics.getLibraryNames },
     { kind: 'frequency', routeFragment: 'file', title: 'file', getter: statistics.getFilenames },
     { kind: 'frequency', routeFragment: 'category', title: 'category', getter: statistics.getCategoryStrings },
     { kind: 'frequency', routeFragment: 'platform', title: 'platform', getter: statistics.getPlatformCategories },
@@ -623,6 +624,15 @@ function privateAddPieRoute(aGraph) {
     });
 }
 
+function privateAddMetricsRoute(aGraph) {
+    app.get('/metrics/' + aGraph.routeFragment, function(req, resp, next) {
+        metrics = statistics.getMetrics(req.apps, aGraph.getter);
+
+        // timeseries
+        resp.json(metrics);
+    });
+}
+
 // read through the list of routes and add them to the router using the above helper functions
 
 for(var graphIndex = 0; graphIndex < graphs.length; graphIndex++) {
@@ -632,6 +642,8 @@ for(var graphIndex = 0; graphIndex < graphs.length; graphIndex++) {
         privateAddDistributionRoute(aGraph);
     } else if (aGraph.kind == 'pie') {
         privateAddPieRoute(aGraph);
+    } else if (aGraph.kind == 'metrics') {
+        privateAddMetricsRoute(aGraph);
     } else {
         privateAddFrequencyRoute(aGraph);
     }

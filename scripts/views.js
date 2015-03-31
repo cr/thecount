@@ -12,6 +12,18 @@ TheCount.frequencyView = Ember.View.extend({
   }.observes('content.@each.value')
 });
 
+TheCount.metricsView = Ember.View.extend({
+  classNames: ['metrics'],
+  didInsertElement: function() {
+    console.log('didInsertElement metrics');
+    createMetricsGraph('metrics', this.get('kind'), this.get('content'));
+  },
+  updateChart: function updateChart() {
+    console.log('updateChart metrics');
+    createMetricsGraph('metrics', this.get('kind'), this.get('content'));
+  }.observes('content.@each.value')
+});
+
 TheCount.distributionView = Ember.View.extend({
   classNames: ['histogram'],
   didInsertElement: function() {

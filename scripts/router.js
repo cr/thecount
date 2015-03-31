@@ -42,6 +42,7 @@ TheCount.Router.map(function() {
   this.resource('apps', { path: '/listing/:listing_kind/:listing_param' });
   this.resource('app', { path: '/app/:app_id'});
   this.resource('frequency', { path: '/frequency/:frequency_kind' });
+  this.resource('metrics', { path: '/metrics/:metrics_kind' });
   this.resource('table', { path: '/table' });
   this.resource('distribution', { path: '/distribution/:distribution_kind' });
   this.resource('pie', { path: '/pie/:pie_kind' });
@@ -158,6 +159,29 @@ TheCount.FrequencyRoute = Ember.Route.extend({
     error: function(error, transition) {
       console.log('error in frequency route');
       insertAlert('Cannot fetch frequency data');
+      console.log(error);
+      $('.loading').hide();
+    }
+  }
+});
+
+TheCount.MetricsRoute = Ember.Route.extend({
+  setupController: function(controller, data) {
+    controller.set('model', data);  
+    controller.set('metricsKind', this.get('metricsKind'));
+    $('.loading').hide();
+    document.title = 'TheCount | metrics | ' + this.get('metricsKind');
+  },
+  model: function(params) {
+    this.set('metricsKind', params.metrics_kind);
+    $('.loading').show();
+
+    return Ember.$.getJSON('/metrics/' + params.metrics_kind + middlewareQueryParams());
+  },
+  actions: {
+    error: function(error, transition) {
+      console.log('error in metrics route');
+      insertAlert('Cannot fetch metrics data');
       console.log(error);
       $('.loading').hide();
     }

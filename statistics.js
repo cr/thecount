@@ -233,6 +233,57 @@ function getFrequency(inApps, getArrayOfStringsPerAppFn) {
     return {total: appsFound, chartData: chartData.slice(0, 40)};
 }
 
+// METRICS HELPER CODE
+
+function getMetrics(inApps, getArrayOfStringsPerAppFn) {
+    var datebins = {};
+    var appsFound = 0;
+
+    for (index in inApps) {
+        var app = inApps[index];
+        var strings = getArrayOfStringsPerAppFn(app);
+        var updated = new Date(app.last_updated);
+		// round date to mimd-month
+		updated.setDate(15);
+		dateKey = updated.toDateString();
+
+        if (strings.length > 0) {
+            appsFound++;
+
+            for (var stringIndex = 0; stringIndex < strings.length; stringIndex++) {
+                if (! strings[stringIndex]) {
+                    console.log('AOOGAH ' + app.id);
+                    console.log(strings);
+                }
+
+                var stringKey = strings[stringIndex].replace(':', '-');
+
+                if (!datebins[stringKey]) datebins[stringKey] = {};
+				if (!datebins[stringKey][dateKey]) datebins[stringKey][dateKey] = 0;
+				datebins[stringKey][dateKey]++;
+            }
+        }
+    }
+	console.log( "found " + appsFound + " apps for metrics" );
+
+    var chartData = [];
+	var labels = [];
+	var id = 0;
+
+    for (name in datebins) {
+		var graph = [];
+		for (date in datebins[name]) graph.push({ 'date':new Date(date), 'value':datebins[name][date], 'line_id':id});
+		chartData.push(graph);
+		labels.push(name);
+		id++;
+    }
+
+    ret = {'total': appsFound, 'chartData': chartData, 'labels': labels};
+    ret = {'total': appsFound, 'chartData': chartData};
+	console.log(ret);
+	return ret;
+}
+
 // returns the author of an app
 // TODO: use distribution? Definitely only one value
 
@@ -735,6 +786,7 @@ module.exports.getReviewedDate = getReviewedDate;
 module.exports.getLastUpdatedDate = getLastUpdatedDate;
 
 module.exports.getFrequency = getFrequency;
+module.exports.getMetrics = getMetrics;
 module.exports.getManifestProtocol = getManifestProtocol;
 module.exports.getAuthor = getAuthor;
 module.exports.getOrientation = getOrientation;

@@ -7,6 +7,7 @@
   <link rel="stylesheet" href="/stylesheets/barchart.css" type="text/css">
   <link rel="stylesheet" href="/stylesheets/tablesorter.blue.css" type="text/css">
   <link rel="stylesheet" href="/stylesheets/datepicker.css" type="text/css">
+  <link rel="stylesheet" href="/stylesheets/metricsgraphics.css" type="text/css">
 
 </head>
 
@@ -57,6 +58,7 @@
 								<li>{{#link-to 'frequency' 'platform'}}platform{{/link-to}}</li>
 								<li>{{#link-to 'frequency' 'payment'}}payment{{/link-to}}</li>
 								<li>{{#link-to 'frequency' 'library'}}library{{/link-to}}</li>
+								<li>{{#link-to 'metrics' 'library'}}library metrics{{/link-to}}</li>
 								<li>{{#link-to 'distribution' 'package_size'}}package sizes{{/link-to}}</li>
 								<li>{{#link-to 'frequency' 'icon_sizes'}}icon sizes{{/link-to}}</li>
 								<li>{{#link-to 'frequency' 'permission'}}permission{{/link-to}}</li>
@@ -400,6 +402,20 @@
 		</div>
 	</script>
 
+	<script type="text/x-handlebars" data-template-name="metrics">
+		<div class='container'>
+			<div class='row'>
+				<div class='col-md-12'>
+					<h2>{{metricsKind}}</h2>
+					<h3>metrics of {{metricsKind}} among {{formatNumber total}} apps </h3>
+
+					{{view TheCount.metricsView kind=metricsKind content=chartData}}
+					<div class="metricslegend"></div>
+				</div>
+			</div>
+		</div>
+	</script>
+
 	<script type="text/x-handlebars" data-template-name="pie">
 		<div class='container'>
 			<div class='row'>
@@ -436,6 +452,7 @@
 	<script src="/scripts/bootstrap.js">
 	<script src="/scripts/bootstrap-datepicker.js"> </script>
 	<script src="/scripts/d3.v3.min.js"> </script>
+	<script src="/scripts/metricsgraphics.min.js"> </script>
 	<script src="/scripts/installHelpers.js"> </script>
 	<script src="/scripts/d3Helpers.js"> </script>
 	<script src="/scripts/app.js"> </script>

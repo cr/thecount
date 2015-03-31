@@ -53,6 +53,59 @@ function createFrequencyGraph(inDivClass, inListingKind, data) {
         .text(function(d) { return d.label + " (" + formatCount(d.val) + ")"  });
 }
 
+function createMetricsGraph(inDivClass, inListingKind, data) {
+    console.log('metrics kind ' + inListingKind);
+
+    var width = 900,
+        outsideLabelThreshold = 200;
+
+
+    // data = Array[ Array [ Object, ... ], Array [ Object, ... ], ... ]
+    // Object { date: Date 2013-12-31T23:00:00.000Z, value: 150000000, line_id: 2 }
+
+	data = [
+		[
+			{ 'date': new Date('2014-10-01'), 'value':0.1, 'line_id': 0 },
+			{ 'date': new Date('2014-11-01'), 'value':0.2, 'line_id': 0 },
+			{ 'date': new Date('2014-12-01'), 'value':0.3, 'line_id': 0 },
+			{ 'date': new Date('2015-01-01'), 'value':0.4, 'line_id': 0 }
+		],
+		[
+			{ 'date': new Date('2014-10-01'), 'value':0.2, 'line_id': 1 },
+			{ 'date': new Date('2014-11-01'), 'value':0.3, 'line_id': 1 },
+			{ 'date': new Date('2014-12-01'), 'value':0.4, 'line_id': 1 },
+			{ 'date': new Date('2015-01-01'), 'value':0.1, 'line_id': 1 }
+		],
+		[
+			{ 'date': new Date('2014-10-01'), 'value':0.3, 'line_id': 2 },
+			{ 'date': new Date('2014-11-01'), 'value':0.2, 'line_id': 2 },
+			{ 'date': new Date('2014-12-01'), 'value':0.1, 'line_id': 2 },
+			{ 'date': new Date('2015-01-01'), 'value':0.2, 'line_id': 2 }
+		]
+	];
+
+
+    // add a wide multi-line chart
+    MG.data_graphic({
+        title:"Multi-Line Chart Wide",
+        description: "This line chart contains multiple lines and has extended ticks enabled.",
+        area: false,
+        legend: ['Line 1','Line 2','Line 3'],
+        legend_target: '.metricslegend',
+        data: data,
+        width: width,
+        height: 700,
+        //right: 1000,
+        show_secondary_x_label: false,
+        xax_tick: 0,
+        y_extended_ticks: true,
+        target: '.' + inDivClass,
+        x_accessor: 'date',
+        y_accessor: 'value'
+    });
+
+}
+
 function createHistogram(values, useDateRange) {
     console.log('createHistogram ' + useDateRange);
 
